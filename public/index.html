@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get Key</title>
+<style>
+  :root {
+    --bg:#07090c; --panel:#111721; --line:#1e2733;
+    --text:#d7e0ea; --dim:#7a8899; --accent:#4fd1c5; --danger:#f06a6a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(1000px 700px at 80% -10%, #0f1a24 0%, transparent 60%),
+      var(--bg);
+    color:var(--text); font-family: monospace; padding:24px;
+  }
+  .card {
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:32px; max-width:520px; width:100%;
+  }
+  h1 { margin:0 0 20px; font-size:18px; letter-spacing:2px;
+       text-transform:uppercase; color:var(--dim); }
+  button {
+    width:100%; padding:16px; font-size:14px; letter-spacing:2px;
+    text-transform:uppercase; font-family:inherit;
+    background:linear-gradient(180deg,#2c8a82 0%,#1e6a63 100%);
+    border:1px solid #2c8a82; color:#eafffb;
+    border-radius:8px; cursor:pointer; font-weight:600;
+  }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .key {
+    display:block; text-align:center; font-size:24px; letter-spacing:4px;
+    color:var(--accent); padding:24px 16px; border:1px solid var(--accent);
+    border-radius:8px; user-select:all; margin:16px 0; word-break:break-all;
+  }
+  .meta { color:var(--dim); font-size:13px; line-height:1.8; margin-top:12px; }
+  .meta b { color:var(--text); }
+  .error { color:var(--danger); text-align:center; padding:24px 0; }
+  .footer { margin-top:24px; font-size:11px; color:var(--dim);
+            text-align:center; letter-spacing:1px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Get Key</h1>
+  <div id="output"></div>
+  <button id="btn" onclick="getKey()">Request Key</button>
+  <div class="footer">Simpan kode ini. Berlaku 1 jam.</div>
+</div>
+
+<script>
+async function getKey() {
+  const btn = document.getElementById('btn');
+  const out = document.getElementById('output');
+  btn.disabled = true;
+  out.innerHTML = '<div class="meta">Memproses…</div>';
+
+  try {
+    const r = await fetch('/api/generate', { method: 'POST' });
+    const j = await r.json();
+
+    if (!r.ok) {
+      out.innerHTML = '<div class="error">' + j.error + ' (' + (j.used||0) + '/' + (j.limit||5) + ')</div>';
+      btn.disabled = false;
+      return;
+    }
+
+    const exp = new Date(j.expires_at);
+    out.innerHTML =
+      '<span class="key">' + j.key + '</span>' +
+      '<div class="meta">' +
+        '<div>Berlaku sampai: <b>' + exp.toLocaleTimeString('id-ID') + '</b></div>' +
+        '<div>Sisa kuota hari ini: <b>' + j.remaining + '×</b></div>' +
+      '</div>';
+  } catch (e) {
+    out.innerHTML = '<div class="error">Gagal konek ke server</div>';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
